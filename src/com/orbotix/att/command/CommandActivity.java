@@ -191,8 +191,8 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
             mConnectionView.showSpheros();
         }
 
-        SpeechWebServiceCall.setAppId("c6ec39b0e4c6d64068b2a7c42bce4a6e");
-        SpeechWebServiceCall.setAppSecret("95750fcd760bd2be");
+        SpeechWebServiceCall.setAppId("801f740768450fd78a5c7aaa16ac82b4");
+        SpeechWebServiceCall.setAppSecret("31c6b5e9b54b5abb");
 
         SpeechWebServiceCall call = new SpeechWebServiceCall("https://api.att.com/oauth/token?client_id=801f740768450fd78a5c7aaa16ac82b4&client_secret=31c6b5e9b54b5abb&grant_type=client_credentials&scope=SPEECH");
         call.setListener(this);
