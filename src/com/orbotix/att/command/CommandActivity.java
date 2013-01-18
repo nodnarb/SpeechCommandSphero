@@ -206,7 +206,6 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         super.onStop();
         RobotProvider.getDefaultProvider().disconnectControlledRobots();
         mRobot = null;
-
         mOAuthToken = null;
     }
 
