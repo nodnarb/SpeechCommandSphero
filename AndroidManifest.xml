@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
         <activity android:name="com.att.android.speech.ATTSpeechActivity"
-                  android:theme="@android:style/Theme.Translucent.NoTitleBar"
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
                   android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|fontScale" />
     </application>
 </manifest>

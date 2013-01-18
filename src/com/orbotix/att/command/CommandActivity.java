@@ -8,7 +8,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -179,7 +178,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
             next = next.substring(0, nextSpaceIndex);
         }
 
-        Log.d("Orbotix", foundWord + " " + next);
+        //Log.d("Orbotix", foundWord + " " + next);
 
         return next;
     }

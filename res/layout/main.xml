@@ -5,6 +5,19 @@
               android:layout_height="fill_parent"
               android:background="@drawable/att_bg"
         >
+    <TextView android:id="@+id/instructions"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:textSize="24sp"
+              android:text="Known Commands"
+              android:layout_alignParentTop="true"
+              android:layout_centerHorizontal="true"/>
+    <TextView android:id="@+id/instruction_set"
+              android:layout_below="@id/instructions"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:text="\tGo Forward\n\tGo Backward\n\tGo Left\n\tGo Right\n\tChange Color"
+              android:layout_centerHorizontal="true"/>
 
     <Button android:id="@+id/speak_button"
             android:layout_width="wrap_content"
