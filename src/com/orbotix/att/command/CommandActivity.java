@@ -6,13 +6,18 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import com.att.android.speech.ATTSpeechActivity;
 import orbotix.robot.base.Robot;
 import orbotix.robot.base.RobotProvider;
+import orbotix.robot.base.RollCommand;
+import orbotix.robot.base.RotationRateCommand;
+import orbotix.view.calibration.CalibrationButtonView;
 import orbotix.view.connection.SpheroConnectionView;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,6 +34,11 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
     private Robot mRobot;
     private Button mSpeakButton;
     private String mOAuthToken;
+    private int mLastKnownHeading;
+
+    private Handler mHandler = new Handler();
+
+    private CalibrationButtonView mCalibrationButtonViewAbove;
 
     /**
      * Called when the activity is first created.
@@ -40,6 +50,14 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
 
         mSpeakButton = (Button)findViewById(R.id.speak_button);
         setupConnectionView();
+
+        // Initialize calibrate button view where the calibration circle shows above button
+        // This is the default behavior
+        mCalibrationButtonViewAbove = (CalibrationButtonView)findViewById(R.id.calibration_above);
+        mCalibrationButtonViewAbove.setCalibrationButton((View)findViewById(R.id.calibration_button_above));
+        // You can also change the size of the calibration views
+        mCalibrationButtonViewAbove.setRadius(300);
+        mCalibrationButtonViewAbove.setCalibrationCircleLocation(CalibrationButtonView.CalibrationCircleLocation.ABOVE);
     }
 
     private void setupConnectionView() {
@@ -58,6 +76,10 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
                 String id = robot.getUniqueId();
 
                 mRobot = RobotProvider.getDefaultProvider().findRobot(id);
+
+                // Make sure you let the calibration views know the robot it should control
+                mCalibrationButtonViewAbove.setRobot(mRobot);
+
                 mConnectionLayout.setVisibility(View.INVISIBLE);
             }
 
@@ -164,6 +186,24 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
                 .setCancelable(false);
         builder.show();
     }
+    private Runnable stopper = new Runnable() {
+        @Override
+        public void run() {
+            RollCommand.sendCommand(mRobot, convertAngleToDegrees(mLastKnownHeading), 0.0f, true);
+        }
+    };
+
+    private void go(double headingChange) {
+        if (mRobot == null || !mRobot.isUnderControl()) {
+            return;
+        }
+        mLastKnownHeading += headingChange;
+        RotationRateCommand.sendCommand(mRobot, 0.9f);
+        RollCommand.sendCommand(mRobot, convertAngleToDegrees(mLastKnownHeading), 0.9f, false);
+
+        mHandler.removeCallbacks(stopper);
+        mHandler.postDelayed(stopper, 4000);
+    }
 
     @Override
     public void onCallCompleted(SpeechWebServiceCall call, int speechResponseCode) {
@@ -179,6 +219,26 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
                 e.printStackTrace();
                 return;
             }
+        }
+    }
+
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        mCalibrationButtonViewAbove.interpretMotionEvent(event);
+        return super.dispatchTouchEvent(event);
+    }
+
+    public static float convertAngleToDegrees(double angleInRadians) {
+        float angleInDegrees = (float)Math.toDegrees(angleInRadians);
+        if (angleInDegrees >= 0.0 && angleInDegrees < 360.0) {
+            return angleInDegrees;
+        } else if (angleInDegrees < 0.0) {
+            return convertAngleToDegrees(angleInRadians + (2.0 * Math.PI));
+        } else if (angleInDegrees > 360.0) {
+            return convertAngleToDegrees(angleInRadians - (2.0 * Math.PI));
+        } else {
+            return Math.abs(angleInDegrees);
         }
     }
 }
