@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:background="@drawable/att_bg"
+        >
+
+    <Button android:id="@+id/speak_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:enabled="false"
+            android:onClick="startSpeech"
+            android:text="@string/speak"/>
+
+    <RelativeLayout android:id="@+id/connection_layout"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@drawable/dialog_bg">
+
+        <TextView
+                android:id="@+id/select_sphero_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginBottom="10dp"
+                android:layout_centerHorizontal="true"
+                android:textSize="23sp"
+                android:textStyle="bold"
+                android:textColor="#fff"
+                android:text="@string/startup_select_robot"
+                android:background="@drawable/half_rounded_rectangle"
+                />
+
+        <!-- Connection View -->
+        <orbotix.view.connection.SpheroConnectionView
+                android:id="@+id/connection_view"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_below="@+id/select_sphero_text"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="50dp"
+                android:layout_marginRight="50dp"
+                />
+    </RelativeLayout>
+</RelativeLayout>
+
