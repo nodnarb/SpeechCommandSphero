@@ -12,17 +12,16 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import com.att.android.speech.ATTSpeechActivity;
-import orbotix.robot.base.Robot;
-import orbotix.robot.base.RobotProvider;
-import orbotix.robot.base.RollCommand;
-import orbotix.robot.base.RotationRateCommand;
+import orbotix.robot.base.*;
 import orbotix.view.calibration.CalibrationButtonView;
 import orbotix.view.connection.SpheroConnectionView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Random;
 
 public class CommandActivity extends Activity implements SpeechWebServiceCall.SpeechCallCompletedListener {
 
@@ -33,6 +32,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
     private View mConnectionLayout;
     private Robot mRobot;
     private Button mSpeakButton;
+    private TextView mSpokenTextView;
     private String mOAuthToken;
     private int mLastKnownHeading;
 
@@ -49,6 +49,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         setContentView(R.layout.main);
 
         mSpeakButton = (Button)findViewById(R.id.speak_button);
+        mSpokenTextView = (TextView)findViewById(R.id.spoken_text_view);
         setupConnectionView();
 
         // Initialize calibrate button view where the calibration circle shows above button
@@ -58,14 +59,18 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         // You can also change the size of the calibration views
         mCalibrationButtonViewAbove.setRadius(300);
         mCalibrationButtonViewAbove.setCalibrationCircleLocation(CalibrationButtonView.CalibrationCircleLocation.ABOVE);
+        mCalibrationButtonViewAbove.setOnEndRunnable(new Runnable() {
+            @Override
+            public void run() {
+                mLastKnownHeading = 0;
+            }
+        });
     }
 
     private void setupConnectionView() {
         mConnectionLayout = findViewById(R.id.connection_layout);
         mConnectionView = (SpheroConnectionView)findViewById(R.id.connection_view);
         mConnectionView.setSingleSpheroMode(true);
-        //mConnectionView.setRowBackgroundDrawable(getResources().getDrawable(R.drawable.rounded_transluscent_grey_rectangle));
-        //mConnectionView.setTextColor(0xffffffff);
         mConnectionView.setConnectedSuccessDrawable(getResources().getDrawable(R.drawable.sphero_alive));
         mConnectionView.setConnectionFailedDrawable(getResources().getDrawable(R.drawable.sphero_dead));
 
@@ -123,15 +128,60 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
                     return;
                 }
 
-                // there's stuff
-                StringBuilder builder = new StringBuilder("Phrase: ");
+                // stuff came back!
+                StringBuilder builder = new StringBuilder();
                 for (String part : textList) {
                     builder.append(part);
                     builder.append(" ");
                 }
-                Log.d("Orbotix", builder.toString());
+
+                mSpokenTextView.setText(builder.toString());
+
+                processSpeech(builder.toString());
             }
         }
+    }
+
+    private void processSpeech(String phrase) {
+        if (phrase.contains("go")) {
+            handleGo(phrase);
+        } else if (phrase.contains("change")) {
+            handleChange(phrase);
+        }
+
+    }
+
+    private void handleChange(String phrase) {
+        String next = getNextWord("change", phrase);
+        if (next.equalsIgnoreCase("color")) {
+            Random random = new Random();
+            RGBLEDOutputCommand.sendCommand(mRobot, random.nextInt(255), random.nextInt(255), random.nextInt(255));
+        }
+    }
+
+    private void handleGo(String phrase) {
+        String next = getNextWord("go", phrase);
+        if (next.equalsIgnoreCase("forward")) {
+            go(0.0);
+        } else if (next.contains("back")) {
+            go(180.0);
+        } else if (next.equalsIgnoreCase("left")) {
+            go(-90.0);
+        } else if (next.equalsIgnoreCase("right")) {
+            go(90.0);
+        }
+    }
+
+    private String getNextWord(String foundWord, String phrase) {
+        String next = phrase.substring(phrase.indexOf(foundWord) + foundWord.length() + 1);
+        int nextSpaceIndex = next.indexOf(" ");
+        if (nextSpaceIndex > 0) {
+            next = next.substring(0, nextSpaceIndex);
+        }
+
+        Log.d("Orbotix", foundWord + " " + next);
+
+        return next;
     }
 
     @Override
@@ -145,7 +195,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         SpeechWebServiceCall.setAppId("c6ec39b0e4c6d64068b2a7c42bce4a6e");
         SpeechWebServiceCall.setAppSecret("95750fcd760bd2be");
 
-        SpeechWebServiceCall call = new SpeechWebServiceCall("https://api.att.com/oauth/token?client_id=c6ec39b0e4c6d64068b2a7c42bce4a6e&client_secret=95750fcd760bd2be&grant_type=client_credentials&scope=SPEECH");
+        SpeechWebServiceCall call = new SpeechWebServiceCall("https://api.att.com/oauth/token?client_id=801f740768450fd78a5c7aaa16ac82b4&client_secret=31c6b5e9b54b5abb&grant_type=client_credentials&scope=SPEECH");
         call.setListener(this);
         mOAuthToken = null;
         call.makeCallAsynchronously();
@@ -202,7 +252,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         RollCommand.sendCommand(mRobot, convertAngleToDegrees(mLastKnownHeading), 0.9f, false);
 
         mHandler.removeCallbacks(stopper);
-        mHandler.postDelayed(stopper, 4000);
+        mHandler.postDelayed(stopper, 2000);
     }
 
     @Override
@@ -213,15 +263,13 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
             try {
                 JSONObject object = new JSONObject(call.getData());
                 mOAuthToken = object.getString("access_token");
-                Log.d("Orbotix", "token = " + mOAuthToken);
+                //Log.d("Orbotix", "token = " + mOAuthToken);
                 mSpeakButton.setEnabled(true);
             } catch (JSONException e) {
                 e.printStackTrace();
-                return;
             }
         }
     }
-
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
