@@ -33,7 +33,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
     private Button mSpeakButton;
     private TextView mSpokenTextView;
     private String mOAuthToken;
-    private int mLastKnownHeading;
+    private float mLastKnownHeading;
 
     private Handler mHandler = new Handler();
 
@@ -61,7 +61,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         mCalibrationButtonViewAbove.setOnEndRunnable(new Runnable() {
             @Override
             public void run() {
-                mLastKnownHeading = 0;
+                mLastKnownHeading = 0.0f;
             }
         });
     }
@@ -80,6 +80,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
                 String id = robot.getUniqueId();
 
                 mRobot = RobotProvider.getDefaultProvider().findRobot(id);
+                mLastKnownHeading = 0.0f;
 
                 // Make sure you let the calibration views know the robot it should control
                 mCalibrationButtonViewAbove.setRobot(mRobot);
@@ -238,7 +239,7 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
     private Runnable stopper = new Runnable() {
         @Override
         public void run() {
-            RollCommand.sendCommand(mRobot, convertAngleToDegrees(mLastKnownHeading), 0.0f, true);
+            RollCommand.sendCommand(mRobot, mLastKnownHeading, 0.0f, true);
         }
     };
 
@@ -246,9 +247,11 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
         if (mRobot == null || !mRobot.isUnderControl()) {
             return;
         }
+
         mLastKnownHeading += headingChange;
+        mLastKnownHeading = (float)((int)mLastKnownHeading % 360);
         RotationRateCommand.sendCommand(mRobot, 0.9f);
-        RollCommand.sendCommand(mRobot, convertAngleToDegrees(mLastKnownHeading), 0.9f, false);
+        RollCommand.sendCommand(mRobot, mLastKnownHeading, 0.9f, false);
 
         mHandler.removeCallbacks(stopper);
         mHandler.postDelayed(stopper, 2000);
@@ -274,18 +277,5 @@ public class CommandActivity extends Activity implements SpeechWebServiceCall.Sp
     public boolean dispatchTouchEvent(MotionEvent event) {
         mCalibrationButtonViewAbove.interpretMotionEvent(event);
         return super.dispatchTouchEvent(event);
-    }
-
-    public static float convertAngleToDegrees(double angleInRadians) {
-        float angleInDegrees = (float)Math.toDegrees(angleInRadians);
-        if (angleInDegrees >= 0.0 && angleInDegrees < 360.0) {
-            return angleInDegrees;
-        } else if (angleInDegrees < 0.0) {
-            return convertAngleToDegrees(angleInRadians + (2.0 * Math.PI));
-        } else if (angleInDegrees > 360.0) {
-            return convertAngleToDegrees(angleInRadians - (2.0 * Math.PI));
-        } else {
-            return Math.abs(angleInDegrees);
-        }
     }
 }
